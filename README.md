@@ -45,6 +45,8 @@ sudo cp -r org.kde.plasma.taskmanager /usr/local/share/plasma/plasmoids/
 
 Log out and log in or restart
 
+alternatively you can install it manually using kio-admin
+
 -------------------------------------------------------------------
 
 ## to uninstall
