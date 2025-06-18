@@ -32,7 +32,9 @@ sudo cp -r org.kde.plasma.taskmanager /usr/local/share/plasma/plasmoids/
 ```
 
 
-uninstall
+-------------------------------------------------------------------
+
+to uninstall
 ```bash
 sudo rm -rf /usr/local/share/plasma/desktoptheme/default
 sudo rm -rf /usr/local/share/plasma/plasmoids/org.kde.plasma.taskmanager
