@@ -12,13 +12,13 @@ git clone https://github.com/orqvvcn/kde-panel-tasks.git
 cd kde-panel-tasks
 ```
 
-Step 3: Create needed folders (with sudo)
+Create needed folders (with sudo)
 ```bash
 sudo mkdir -p /usr/local/share/plasma/desktoptheme
 sudo mkdir -p /usr/local/share/plasma/plasmoids
 ```
 
-Step 4: Copy the default folder for Breeze theme
+Copy the default folder for Breeze theme
 
 ```bash
 sudo cp -r default /usr/local/share/plasma/desktoptheme/
