@@ -3,7 +3,7 @@
 you have to be using the default breeze theme 
 
 
-##install
+## install
 
  Clone the repo
  
@@ -34,7 +34,7 @@ sudo cp -r org.kde.plasma.taskmanager /usr/local/share/plasma/plasmoids/
 
 -------------------------------------------------------------------
 
-##to uninstall
+## to uninstall
 ```bash
 sudo rm -rf /usr/local/share/plasma/desktoptheme/default
 sudo rm -rf /usr/local/share/plasma/plasmoids/org.kde.plasma.taskmanager
