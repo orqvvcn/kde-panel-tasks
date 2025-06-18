@@ -12,8 +12,8 @@ this also makes the separator lines and blue bars invisible on the panel and pan
 suggestion to look better  
 - change the application launcher icon to view-grid
 - select 'session' on 'show buttons for:' and uncheck the 'Show action button captions' (application launcher settings)
-
-
+- make the panel floating
+  
 
 ## install
 
