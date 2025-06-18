@@ -31,6 +31,7 @@ Copy org.kde.plasma.taskmanager folder
 sudo cp -r org.kde.plasma.taskmanager /usr/local/share/plasma/plasmoids/
 ```
 
+Log out and log in or restart
 
 -------------------------------------------------------------------
 
