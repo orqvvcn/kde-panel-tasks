@@ -1,5 +1,11 @@
 # underline with bouncy apps kde plasma
 
+
+
+https://github.com/user-attachments/assets/ade71f78-303f-408e-8a07-176a94ed6f28
+
+
+
 you have to be using the default breeze theme 
 
 
