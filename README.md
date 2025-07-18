@@ -46,6 +46,7 @@ Copy org.kde.plasma.taskmanager folder
 
 ```bash
 sudo cp -r org.kde.plasma.taskmanager /usr/local/share/plasma/plasmoids/
+sudo cp -r org.kde.plasma.kickoff /usr/local/share/plasma/plasmoids/
 ```
 
 Log out and log in or restart
@@ -58,4 +59,6 @@ alternatively you can install it manually using kio-admin
 ```bash
 sudo rm -rf /usr/local/share/plasma/desktoptheme/default
 sudo rm -rf /usr/local/share/plasma/plasmoids/org.kde.plasma.taskmanager
+sudo rm -rf /usr/local/share/plasma/plasmoids/org.kde.plasma.kickoff
+
 ```
