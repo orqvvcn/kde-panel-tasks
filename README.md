@@ -47,7 +47,7 @@ sudo cp -r default /usr/local/share/plasma/desktoptheme/
 ```
 
 
-Copy org.kde.plasma.taskmanager folder
+Copy paste org.kde.plasma.taskmanager and org.kde.plasma.kickoff folder
 
 ```bash
 sudo cp -r org.kde.plasma.taskmanager /usr/local/share/plasma/plasmoids/
