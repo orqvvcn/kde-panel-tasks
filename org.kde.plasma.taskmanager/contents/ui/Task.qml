@@ -765,12 +765,12 @@ Rectangle {
     radius: height / 2
     anchors.horizontalCenter: iconContainer.horizontalCenter
     anchors.bottom: iconContainer.bottom
-    anchors.bottomMargin: -1.5 // Adjust to visually sit just below the icon
+    anchors.bottomMargin: -1.5
     z: 998
 
     color: model.IsWindow && model.IsActive
-        ? Qt.rgba(1, 1, 1, 0.9)
-        : Qt.rgba(1, 1, 1, 0.5)
+        ? Qt.rgba(PlasmaCore.Theme.textColor.r, PlasmaCore.Theme.textColor.g, PlasmaCore.Theme.textColor.b, 0.9)
+        : Qt.rgba(PlasmaCore.Theme.textColor.r, PlasmaCore.Theme.textColor.g, PlasmaCore.Theme.textColor.b, 0.5)
 
     visible: model.IsWindow && !model.IsLauncher
 
@@ -788,7 +788,6 @@ Rectangle {
         }
     }
 }
-
 
 
 
