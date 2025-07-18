@@ -5,7 +5,7 @@
 
 https://github.com/user-attachments/assets/f6568ba3-baf2-4d7b-8b9a-e9e9114245d6
 
-works for light mode
+works for dark mode and light mode
 
 
 
