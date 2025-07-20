@@ -24,6 +24,7 @@ import org.kde.plasma.plasmoid
 
 PlasmaExtras.PlasmoidHeading {
     id: root
+    background: null
 
     property alias searchText: searchField.text
     property Item configureButton: configureButton
@@ -184,52 +185,77 @@ PlasmaExtras.PlasmoidHeading {
                     kickoff.contentArea.forceActiveFocus(Qt.TabFocusReason);
                 }
 
-                PlasmaExtras.SearchField {
-                    id: searchField
-                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                    Layout.fillWidth: true
-                    Layout.leftMargin: kickoff.backgroundMetrics.leftPadding
-                    focus: true
+             
+             
+         PlasmaExtras.SearchField {
+    id: searchField
 
-                    Binding {
-                        target: kickoff
-                        property: "searchField"
-                        value: searchField
-                        // there's only one header ever, so don't waste resources
-                        restoreMode: Binding.RestoreNone
-                    }
-                    Connections {
-                        target: kickoff
-                        function onExpandedChanged() {
-                            if (kickoff.expanded) {
-                                searchField.clear()
-                            }
-                        }
-                    }
-                    onTextEdited: {
-                        searchField.forceActiveFocus(Qt.ShortcutFocusReason)
-                    }
-                    Keys.priority: Keys.AfterItem
-                    Keys.forwardTo: kickoff.contentArea !== null ? kickoff.contentArea.view : []
-                    Keys.onTabPressed: event => {
-                        tabSetFocus(event, nextItemInFocusChain(false));
-                    }
-                    Keys.onBacktabPressed: event => {
-                        tabSetFocus(event, nextItemInFocusChain());
-                    }
-                    Keys.onLeftPressed: event => {
-                        if (activeFocus) {
-                            nextItemInFocusChain(kickoff.sideBarOnRight).forceActiveFocus(
-                                Qt.application.layoutDirection === Qt.RightToLeft ? Qt.TabFocusReason : Qt.BacktabFocusReason)
-                        }
-                    }
-                    Keys.onRightPressed: event => {
-                        if (activeFocus) {
-                            nextItemInFocusChain(!kickoff.sideBarOnRight).forceActiveFocus(
-                                Qt.application.layoutDirection === Qt.RightToLeft ? Qt.BacktabFocusReason : Qt.TabFocusReason)
-                        }
-                    }
-                }
+    leftPadding: Kirigami.Units.gridUnit * 1.6  //  Adds space between icon and text
+
+    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
+    Layout.fillWidth: true
+    //Layout.leftMargin: kickoff.backgroundMetrics.leftPadding
+    Layout.leftMargin: 0  // no left margin at all
+
+    Layout.rightMargin: Kirigami.Units.gridUnit * 3  //  more right margin
+    focus: true
+
+    height: Kirigami.Units.gridUnit * 2
+    implicitHeight: Kirigami.Units.gridUnit * 2
+    font.pixelSize: Kirigami.Theme.defaultFont.pointSize + 2
+    Layout.topMargin: Kirigami.Units.smallSpacing
+    Layout.bottomMargin: Kirigami.Units.smallSpacing
+
+    background: Rectangle {
+        id: bg
+        color: Qt.rgba(1, 1, 1, 0.05)
+        radius: 20
+
+        border.width: 1
+        border.color: searchField.activeFocus || searchField.containsMouse
+            ? Kirigami.Theme.highlightColor
+            : Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.15)
+    }
+
+    onTextEdited: searchField.forceActiveFocus(Qt.ShortcutFocusReason)
+
+    Keys.priority: Keys.AfterItem
+    Keys.forwardTo: kickoff.contentArea !== null ? kickoff.contentArea.view : []
+
+    Keys.onTabPressed: event => tabSetFocus(event, nextItemInFocusChain(false))
+    Keys.onBacktabPressed: event => tabSetFocus(event, nextItemInFocusChain())
+    Keys.onLeftPressed: event => {
+        if (activeFocus) {
+            nextItemInFocusChain(kickoff.sideBarOnRight).forceActiveFocus(
+                Qt.application.layoutDirection === Qt.RightToLeft ? Qt.TabFocusReason : Qt.BacktabFocusReason)
+        }
+    }
+    Keys.onRightPressed: event => {
+        if (activeFocus) {
+            nextItemInFocusChain(!kickoff.sideBarOnRight).forceActiveFocus(
+                Qt.application.layoutDirection === Qt.RightToLeft ? Qt.BacktabFocusReason : Qt.TabFocusReason)
+        }
+    }
+
+    Binding {
+        target: kickoff
+        property: "searchField"
+        value: searchField
+        restoreMode: Binding.RestoreNone
+    }
+
+    Connections {
+        target: kickoff
+        function onExpandedChanged() {
+            if (kickoff.expanded) {
+                searchField.clear()
+            }
+        }
+    }
+}
+
+
+
 
                 PC3.ToolButton {
                     id: configureButton
@@ -297,3 +323,4 @@ PlasmaExtras.PlasmoidHeading {
         }
     }
 }
+
