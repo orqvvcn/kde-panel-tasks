@@ -3,7 +3,15 @@
 
 
 
-https://github.com/user-attachments/assets/f6568ba3-baf2-4d7b-8b9a-e9e9114245d6
+https://github.com/user-attachments/assets/168f5642-9a8e-432d-b917-f5d1abf3028b
+
+
+
+https://github.com/user-attachments/assets/8ed280c5-4dd7-4f4a-a578-eba26ef1dd3a
+
+
+<img width="1050" height="854" alt="etd" src="https://github.com/user-attachments/assets/c92a6165-004a-452f-8e8d-61b7bf440975" />
+
 
 works for dark mode and light mode
 
@@ -42,10 +50,11 @@ sudo cp -r default /usr/local/share/plasma/desktoptheme/
 ```
 
 
-Copy org.kde.plasma.taskmanager folder
+Copy paste org.kde.plasma.taskmanager and org.kde.plasma.kickoff folder
 
 ```bash
 sudo cp -r org.kde.plasma.taskmanager /usr/local/share/plasma/plasmoids/
+sudo cp -r org.kde.plasma.kickoff /usr/local/share/plasma/plasmoids/
 ```
 
 Log out and log in or restart
@@ -58,4 +67,6 @@ alternatively you can install it manually using kio-admin
 ```bash
 sudo rm -rf /usr/local/share/plasma/desktoptheme/default
 sudo rm -rf /usr/local/share/plasma/plasmoids/org.kde.plasma.taskmanager
+sudo rm -rf /usr/local/share/plasma/plasmoids/org.kde.plasma.kickoff
+
 ```

@@ -42,6 +42,13 @@ EmptyPage {
     footer: Footer {
         id: footer
         preferredTabBarWidth: root.preferredSideBarWidth
+
+         //  Simple gray, translucent background
+    background: Rectangle {
+        color: Qt.rgba(128/255, 128/255, 128/255, 0.03)  // medium gray @ 15% opacity
+    }
+
+
         Binding {
             target: kickoff
             property: "footer"
@@ -52,3 +59,4 @@ EmptyPage {
         Keys.onDownPressed: event => {}
     }
 }
+
