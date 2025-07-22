@@ -12,6 +12,7 @@ https://github.com/user-attachments/assets/8ed280c5-4dd7-4f4a-a578-eba26ef1dd3a
 
 <img width="1050" height="854" alt="etd" src="https://github.com/user-attachments/assets/c92a6165-004a-452f-8e8d-61b7bf440975" />
 
+<img width="422" height="68" alt="frd" src="https://github.com/user-attachments/assets/00b686ec-ea79-4451-97b8-f266c7ce7f03" />
 
 works for dark mode and light mode
 
