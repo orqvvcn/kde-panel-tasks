@@ -73,5 +73,7 @@ sudo rm -rf /usr/local/share/plasma/desktoptheme/default
 sudo rm -rf /usr/local/share/plasma/plasmoids/org.kde.plasma.taskmanager
 sudo rm -rf /usr/local/share/plasma/plasmoids/org.kde.plasma.kickoff
 sudo rm -rf /usr/local/share/plasma/plasmoids/org.kde.plasma.systemtray
+sudo rm -rf /usr/local/share/plasma/plasmoids/org.kde.plasma.private.systemtray
+
 
 ```
