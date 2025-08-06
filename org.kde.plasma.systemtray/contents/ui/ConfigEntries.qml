@@ -21,11 +21,87 @@ KCMUtils.ScrollViewKCM {
     id: iconsPage
 
     signal configurationChanged
+    property bool unsavedChanges: !(changedVisibility.size === 0 && changedShortcuts.size === 0)
 
     property var cfg_shownItems: []
     property var cfg_hiddenItems: []
     property var cfg_extraItems: []
+    property var cfg_disabledStatusNotifiers: []
     property alias cfg_showAllItems: showAllCheckBox.checked
+
+    // We can share one combobox model across all delegates, they all have the same options
+    readonly property var comboBoxModel: {
+        const autoElement = {"value": "auto", "text": i18n("Shown when relevant")}
+        const shownElement = {"value": "shown", "text": i18n("Always shown")}
+        const hiddenElement = {"value": "hidden", "text": i18n("Always hidden")}
+        const disabledElement = {"value": "disabled", "text": i18n("Disabled")}
+
+        return cfg_showAllItems
+            ? [autoElement, disabledElement]
+            : [autoElement, shownElement, hiddenElement, disabledElement]
+    }
+
+    readonly property var changedShortcuts: new Map()
+    readonly property var changedVisibility: new Map()
+
+    function saveConfig() {
+        for (const [key, value] of changedVisibility.entries()) {
+            updateVisibility(key, value)
+        }
+        for (const [key, value] of changedShortcuts.entries()) {
+            key.globalShortcut = value
+        }
+        changedShortcuts.clear()
+        changedVisibility.clear()
+        cfg_shownItemsChanged()
+        cfg_hiddenItemsChanged()
+        cfg_extraItemsChanged()
+        cfg_disabledStatusNotifiersChanged()
+        changedShortcutsChanged()
+        changedVisibilityChanged()
+    }
+
+    function updateVisibility (itemId: string, visibility: string): void {
+        const shownIndex = cfg_shownItems.indexOf(itemId)
+        const hiddenIndex = cfg_hiddenItems.indexOf(itemId)
+        const extraIndex = cfg_extraItems.indexOf(itemId)
+        const disabledSniIndex = cfg_disabledStatusNotifiers.indexOf(itemId)
+
+        if (shownIndex > -1) {
+            cfg_shownItems.splice(shownIndex, 1)
+        }
+        if (hiddenIndex > -1) {
+            cfg_hiddenItems.splice(hiddenIndex, 1)
+        }
+        if (extraIndex > -1) {
+            cfg_extraItems.splice(extraIndex, 1)
+        }
+        if (disabledSniIndex > -1) {
+            cfg_disabledStatusNotifiers.splice(disabledSniIndex, 1)
+        }
+
+        switch (visibility) {
+            case "auto":
+            case "auto-sni":
+                cfg_extraItems.push(itemId)
+                break
+            case "shown":
+                cfg_extraItems.push(itemId)
+                /* fallthrough*/
+            case "shown-sni":
+                cfg_shownItems.push(itemId)
+                break
+            case "hidden":
+                cfg_extraItems.push(itemId)
+                /* fallthrough */
+            case "hidden-sni":
+                cfg_hiddenItems.push(itemId)
+                break
+            case "disabled-sni":
+                cfg_disabledStatusNotifiers.push(itemId)
+                break
+        }
+    }
 
     function categoryName(category) {
         switch (category) {
@@ -43,8 +119,62 @@ KCMUtils.ScrollViewKCM {
         }
     }
 
-    header: Kirigami.SearchField {
-        id: filterField
+    Connections {
+        target: plasmoid.configSystemTrayModel
+        function onRowsRemoved() {
+            // if the user closes an app with a SNI that has a visibility change queued, we need to remove it
+            // from the queue as the change is no longer visible in the UI.
+            let idsToRemove = [...changedVisibility.keys()]
+            for (let i = 0; i < plasmoid.configSystemTrayModel.rowCount() && idsToRemove.length > 0; ++i) {
+                let itemId = plasmoid.configSystemTrayModel.index(i,0).data(Qt.UserRole + 2)
+                idsToRemove = idsToRemove.filter(id => id !== itemId)
+            }
+            idsToRemove.forEach(id => {
+                changedVisibility.delete(id)
+            })
+            if (idsToRemove.length > 0) {
+                changedVisibilityChanged()
+            }
+        }
+    }
+
+    // Frameless style for the InlineMessage is not visually compatible here
+    header: ColumnLayout {
+        spacing: Kirigami.Units.smallSpacing
+
+        Kirigami.SearchField {
+            Layout.fillWidth: true
+            id: filterField
+        }
+
+        Kirigami.InlineMessage {
+            id: disablingSniMessage
+            property string appName
+
+            function showWithAppName(appName: string) {
+                disablingSniMessage.appName = appName
+                visible = true;
+            }
+
+            Layout.fillWidth: true
+            type: Kirigami.MessageType.Warning
+            text: xi18nc("@info:usagetip", "Look for a setting in <application>%1</application> to disable its tray icon before doing it here. Some apps’ tray icons were not designed to be disabled, and using this setting may cause them to behave unexpectedly.<nl/><nl/>Use this setting at your own risk, and do not report issues to KDE or the app’s author.", appName)
+            actions: [
+                Kirigami.Action {
+                    text: i18nc("@action:button", "I understand the risks")
+                    onTriggered: disablingSniMessage.visible = false;
+                }
+            ]
+        }
+
+        Kirigami.InlineMessage {
+            id: disablingKlipperMessage
+
+            visible: changedVisibility.get("org.kde.plasma.clipboard") === "disabled"
+            Layout.fillWidth: true
+            type: Kirigami.MessageType.Warning
+            text: xi18nc("@info:usagetip", "Disabling the clipboard is not recommended, as it will cause copied data to be lost when the application it was copied from is closed.<nl/><nl/>Instead consider configuring the clipboard to disable its history, or only remember one item at a time.")
+        }
     }
 
     view: ListView {
@@ -140,6 +270,7 @@ KCMUtils.ScrollViewKCM {
                     }
 
                     QQC2.Label {
+                        id: nameLabel
                         Layout.fillWidth: true
                         text: model.display
                         textFormat: Text.PlainText
@@ -156,109 +287,50 @@ KCMUtils.ScrollViewKCM {
 
                         property real contentWidth: Math.max(implicitBackgroundWidth + leftInset + rightInset,
                                                             implicitContentWidth + leftPadding + rightPadding)
+
+                        readonly property string currentVisibility: changedVisibility.has(itemId)
+                            ? changedVisibility.get(itemId).replace("-sni", "") : originalVisibility
+                        readonly property string originalVisibility: {
+                            if (cfg_showAllItems || cfg_shownItems.indexOf(itemId) !== -1) {
+                                return "shown"
+                            } else if (cfg_hiddenItems.indexOf(itemId) !== -1) {
+                                return "hidden"
+                            } else if ((isPlasmoid && cfg_extraItems.indexOf(itemId) === -1)
+                                || (!isPlasmoid && cfg_disabledStatusNotifiers.indexOf(itemId) > -1)) {
+                                return "disabled"
+                            } else {
+                                return "auto"
+                            }
+                        }
+
                         implicitWidth: Math.max(contentWidth, itemsList.visibilityColumnWidth)
                         Component.onCompleted: itemsList.visibilityColumnWidth = Math.max(implicitWidth, itemsList.visibilityColumnWidth)
 
-                        enabled: (!showAllCheckBox.checked || isPlasmoid) && itemId
+                        enabled: !cfg_showAllItems && itemId
                         textRole: "text"
                         valueRole: "value"
-                        model: comboBoxModel()
 
                         currentIndex: {
-                            let value
-
-                            if (cfg_shownItems.indexOf(itemId) !== -1) {
-                                value = "shown"
-                            } else if (cfg_hiddenItems.indexOf(itemId) !== -1) {
-                                value = "hidden"
-                            } else if (isPlasmoid && cfg_extraItems.indexOf(itemId) === -1) {
-                                value = "disabled"
-                            } else {
-                                value = "auto"
-                            }
-
                             for (let i = 0; i < model.length; i++) {
-                                if (model[i].value === value) {
+                                if (model[i].value === currentVisibility) {
                                     return i
                                 }
                             }
 
                             return 0
                         }
+                        model: iconsPage.comboBoxModel
 
                         onActivated: index => {
-                            const shownIndex = cfg_shownItems.indexOf(itemId)
-                            const hiddenIndex = cfg_hiddenItems.indexOf(itemId)
-                            const extraIndex = cfg_extraItems.indexOf(itemId)
-
-                            switch (currentValue) {
-                            case "auto":
-                                if (shownIndex > -1) {
-                                    cfg_shownItems.splice(shownIndex, 1)
+                            if (currentValue !== originalVisibility) {
+                                if (currentValue === "disabled" && !isPlasmoid) {
+                                    disablingSniMessage.showWithAppName(nameLabel.text)
                                 }
-                                if (hiddenIndex > -1) {
-                                    cfg_hiddenItems.splice(hiddenIndex, 1)
-                                }
-                                if (extraIndex === -1) {
-                                    cfg_extraItems.push(itemId)
-                                }
-                                break
-                            case "shown":
-                                if (shownIndex === -1) {
-                                    cfg_shownItems.push(itemId)
-                                }
-                                if (hiddenIndex > -1) {
-                                    cfg_hiddenItems.splice(hiddenIndex, 1)
-                                }
-                                if (extraIndex === -1) {
-                                    cfg_extraItems.push(itemId)
-                                }
-                                break
-                            case "hidden":
-                                if (shownIndex > -1) {
-                                    cfg_shownItems.splice(shownIndex, 1)
-                                }
-                                if (hiddenIndex === -1) {
-                                    cfg_hiddenItems.push(itemId)
-                                }
-                                if (extraIndex === -1) {
-                                    cfg_extraItems.push(itemId)
-                                }
-                                break
-                            case "disabled":
-                                if (shownIndex > -1) {
-                                    cfg_shownItems.splice(shownIndex, 1)
-                                }
-                                if (hiddenIndex > -1) {
-                                    cfg_hiddenItems.splice(hiddenIndex, 1)
-                                }
-                                if (extraIndex > -1) {
-                                    cfg_extraItems.splice(extraIndex, 1)
-                                }
-                                break
-                            }
-                            iconsPage.configurationChanged()
-                        }
-
-                        function comboBoxModel() {
-                            const autoElement = {"value": "auto", "text": i18n("Shown when relevant")}
-                            const shownElement = {"value": "shown", "text": i18n("Always shown")}
-                            const hiddenElement = {"value": "hidden", "text": i18n("Always hidden")}
-                            const disabledElement = {"value": "disabled", "text": i18n("Disabled")}
-
-                            if (showAllCheckBox.checked) {
-                                if (isPlasmoid) {
-                                    return [autoElement, disabledElement]
-                                } else {
-                                    return [shownElement]
-                                }
+                                iconsPage.changedVisibility.set(itemId, currentValue + (isPlasmoid ? "" : "-sni"))
                             } else {
-                                if (isPlasmoid) {
-                                    return [autoElement, shownElement, hiddenElement, disabledElement]
-                                } else {
-                                    return [autoElement, shownElement, hiddenElement]
-                                }
+                                iconsPage.changedVisibility.delete(itemId)
                             }
+                            iconsPage.changedVisibilityChanged()
                         }
                     }
                     KQC.KeySequenceItem {
@@ -269,12 +341,18 @@ KCMUtils.ScrollViewKCM {
 
                         visible: isPlasmoid
                         enabled: visibilityComboBox.currentValue !== "disabled"
-                        keySequence: model.applet ? model.applet.plasmoid.globalShortcut : ""
+                        readonly property string originalKeySequence: model.applet ? model.applet.plasmoid.globalShortcut : ""
+                        keySequence: changedShortcuts.has(model.applet?.plasmoid) ? changedShortcuts.get(model.applet?.plasmoid) : originalKeySequence
                         onCaptureFinished: {
-                            if (model.applet && keySequence !== model.applet.plasmoid.globalShortcut) {
-                                model.applet.plasmoid.globalShortcut = keySequence
+                            if (model.applet) {
+                                if (keySequence !== model.applet.plasmoid.globalShortcut) {
+                                    changedShortcuts.set(model.applet.plasmoid, keySequence.toString())
+                                } else {
+                                    changedShortcuts.delete(model.applet.plasmoid)
+                                }
 
                                 itemsList.keySequenceColumnWidth = Math.max(implicitWidth, itemsList.keySequenceColumnWidth)
+                                changedShortcutsChanged()
                             }
                         }
                     }

@@ -95,6 +95,17 @@ ColumnLayout {
             // match spacing of DefaultToolTip.qml in plasma-framework
             spacing: Kirigami.Units.smallSpacing
 
+            // close button for right edge ltr and left edge rtl
+            LayoutItemProxy {
+                id: closeButtonFlippedItemProxy
+                target: closeButton
+                visible: toolTipDelegate.isWin &&
+                    ((tasks.Plasmoid.location == PlasmaCore.Types.LeftEdge &&
+                      Application.layoutDirection == Qt.RightToLeft) ||
+                     (tasks.Plasmoid.location == PlasmaCore.Types.RightEdge &&
+                      Application.layoutDirection == Qt.LeftToRight))
+            }
+
             // all textlabels
             ColumnLayout {
                 spacing: 0
@@ -107,7 +118,7 @@ ColumnLayout {
                     lineHeight: toolTipDelegate.isWin && Plasmoid.configuration.showToolTips ? 1 : appNameHeading.lineHeight
                     elide: Text.ElideRight
                     text: toolTipDelegate.appName
-                    color: (headerHoverHandler.visible && headerHoverHighlight.pressed) ? PlasmaCore.Theme.highlightedTextColor : PlasmaCore.Theme.textColor
+                    color: (headerHoverHandler.visible && headerHoverHighlight.pressed) ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.textColor
                     opacity: root.index === 0 ? 1 : 0
                     visible: (text.length !== 0) && (root.orientation === ListView.Horizontal || root.index === 0)
                     textFormat: Text.PlainText
@@ -123,7 +134,7 @@ ColumnLayout {
                     text: ((root.titleIncludesTrack && playerController.active) ||
                            (root.title === appNameHeading.text && somethingVisible))
                           ? "" : root.title
-                    color: (headerHoverHandler.visible && headerHoverHighlight.pressed) ? PlasmaCore.Theme.highlightedTextColor : PlasmaCore.Theme.textColor
+                    color: (headerHoverHandler.visible && headerHoverHighlight.pressed) ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.textColor
                     opacity: 0.75
                     visible: root.orientation === ListView.Horizontal || text.length !== 0
                     textFormat: Text.PlainText
@@ -135,8 +146,8 @@ ColumnLayout {
                     Layout.fillWidth: true
                     elide: Text.ElideRight
                     text: toolTipDelegate.isWin ? root.generateSubText() : ""
-                    color: (headerHoverHandler.visible && headerHoverHighlight.pressed) ? PlasmaCore.Theme.highlightedTextColor : PlasmaCore.Theme.textColor
-                    opacity: 0.6
+                    color: (headerHoverHandler.visible && headerHoverHighlight.pressed) ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.textColor
+                    opacity: 0.75
                     visible: text.length !== 0 && text !== appNameHeading.text
                     textFormat: Text.PlainText
                 }
@@ -157,16 +168,21 @@ ColumnLayout {
                 }
             }
 
+            LayoutItemProxy {
+                target: closeButton
+                visible: toolTipDelegate.isWin && !closeButtonFlippedItemProxy.visible
+            }
+
             // close button
             PlasmaComponents3.ToolButton {
                 id: closeButton
-                Layout.alignment: Qt.AlignTop// | Qt.AlignRight
-                Layout.rightMargin: -headerItem.Layout.margins
+                Layout.alignment: Qt.AlignTop
+                Layout.rightMargin: closeButtonFlippedItemProxy.visible ? headerItem.Layout.margins : -headerItem.Layout.margins
+                Layout.leftMargin: closeButtonFlippedItemProxy.visible ? -headerItem.Layout.margins : headerItem.Layout.margins
                 Layout.topMargin: -headerItem.Layout.margins
-                visible: toolTipDelegate.isWin
                 icon.name: "window-close"
                 onClicked: {
-                    backend.cancelHighlightWindows();
+                    tasks.cancelHighlightWindows();
                     tasksModel.requestClose(root.submodelIndex);
                 }
             }
@@ -342,6 +358,7 @@ ColumnLayout {
             sourceSize: Qt.size(parent.width, parent.height)
 
             asynchronous: true
+            retainWhileLoading: true
             source: toolTipDelegate.playerData?.artUrl ?? ""
             fillMode: Image.PreserveAspectFit
             visible: available
@@ -366,7 +383,9 @@ ColumnLayout {
         // Only load for one entry, as the controls only apply to one window.
         // If this is changed in the future, test for index != -1 to avoid loading
         // when the instance is going to be destroyed
-        active: toolTipDelegate.playerData && ((hasTrackInATitle && albumArtImage.available) || (!hasTrackInATitle && root.index == 0))
+        active: (toolTipDelegate.parentTask?.tooltipControlsEnabled
+             && toolTipDelegate.playerData
+             && ((hasTrackInATitle && albumArtImage.available) || (!hasTrackInATitle && root.index == 0))) ?? false
 
         asynchronous: true
         visible: active
@@ -383,6 +402,7 @@ ColumnLayout {
         id: volumeControls
         active: toolTipDelegate.parentTask !== null
              && pulseAudio.item !== null
+             && toolTipDelegate.parentTask.tooltipControlsEnabled
              && toolTipDelegate.parentTask.hasAudioStream
              // Only load for one entry, as the controls only apply to one window.
              // If this is changed in the future, test for index != -1 to avoid loading

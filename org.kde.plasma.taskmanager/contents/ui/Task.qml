@@ -10,8 +10,6 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 
-
-
 import org.kde.plasma.core as PlasmaCore
 import org.kde.ksvg as KSvg
 import org.kde.plasma.extras as PlasmaExtras
@@ -63,14 +61,15 @@ PlasmaCore.ToolTipArea {
     property int previousChildCount: 0
     property alias labelText: label.text
     property QtObject contextMenu: null
-    readonly property bool smartLauncherEnabled: !inPopup && !model.IsStartup
+    readonly property bool smartLauncherEnabled: !inPopup
     property QtObject smartLauncherItem: null
 
     property Item audioStreamIcon: null
     property var audioStreams: []
     property bool delayAudioStreamIndicator: false
     property bool completed: false
-    readonly property bool audioIndicatorsEnabled: Plasmoid.configuration.interactiveMute
+    readonly property bool audioIndicatorsEnabled: Plasmoid.configuration.indicateAudioStreams
+    readonly property bool tooltipControlsEnabled: Plasmoid.configuration.tooltipControls
     readonly property bool hasAudioStream: audioStreams.length > 0
     readonly property bool playingAudio: hasAudioStream && audioStreams.some(item => !item.corked)
     readonly property bool muted: hasAudioStream && audioStreams.every(item => item.muted)
@@ -205,7 +204,7 @@ PlasmaCore.ToolTipArea {
 
     onHighlightedChanged: {
         // ensure it doesn't get stuck with a window highlighted
-        backend.cancelHighlightWindows();
+        tasks.cancelHighlightWindows();
     }
 
     onPidChanged: updateAudioStreams({delay: false})
@@ -248,7 +247,7 @@ PlasmaCore.ToolTipArea {
     }
 
     onHasAudioStreamChanged: {
-        const audioStreamIconActive = hasAudioStream;
+        const audioStreamIconActive = hasAudioStream && audioIndicatorsEnabled;
         if (!audioStreamIconActive) {
             if (audioStreamIcon !== null) {
                 audioStreamIcon.destroy();
@@ -368,7 +367,7 @@ PlasmaCore.ToolTipArea {
         mainItem.activities = Qt.binding(() => model.Activities);
 
         mainItem.smartLauncherCountVisible = Qt.binding(() => smartLauncherItem?.countVisible ?? false);
-        mainItem.smartLauncherCount = Qt.binding(() => mainItem.smartLauncherCountVisible ? smartLauncherItem.count : 0);
+        mainItem.smartLauncherCount = Qt.binding(() => mainItem.smartLauncherCountVisible ? (smartLauncherItem?.count ?? 0) : 0);
 
         mainItem.blockingUpdates = false;
         tasksRoot.toolTipAreaItem = this;
@@ -453,22 +452,21 @@ PlasmaCore.ToolTipArea {
                 }
             }
 
-            backend.cancelHighlightWindows();
+            tasks.cancelHighlightWindows();
         }
     }
 
     KSvg.FrameSvgItem {
         id: frame
 
- anchors {
-    fill: parent
+        anchors {
+            fill: parent
 
-    topMargin: ((!tasksRoot.vertical && taskList.rows > 1) ? LayoutMetrics.iconMargin : 0) 
-    bottomMargin: ((!tasksRoot.vertical && taskList.rows > 1) ? LayoutMetrics.iconMargin : 0) 
-    leftMargin: (((inPopup || tasksRoot.vertical) && taskList.columns > 1) ? LayoutMetrics.iconMargin : 0) 
-    rightMargin: (((inPopup || tasksRoot.vertical) && taskList.columns > 1) ? LayoutMetrics.iconMargin : 0) 
-}
-
+            topMargin: (!tasksRoot.vertical && taskList.rows > 1) ? LayoutMetrics.iconMargin : 0
+            bottomMargin: (!tasksRoot.vertical && taskList.rows > 1) ? LayoutMetrics.iconMargin : 0
+            leftMargin: ((inPopup || tasksRoot.vertical) && taskList.columns > 1) ? LayoutMetrics.iconMargin : 0
+            rightMargin: ((inPopup || tasksRoot.vertical) && taskList.columns > 1) ? LayoutMetrics.iconMargin : 0
+        }
 
         imagePath: "widgets/tasks"
         property bool isHovered: task.highlighted && Plasmoid.configuration.taskHoverEffect
@@ -491,9 +489,6 @@ PlasmaCore.ToolTipArea {
                         item.appletRequestsInhibitDnD = value
                     }
                 }
-                
-
-
             }
 
             onActiveChanged: {
@@ -527,17 +522,14 @@ PlasmaCore.ToolTipArea {
 
         anchors.fill: frame
         asynchronous: true
-        active: model.IsWindow && task.smartLauncherItem && task.smartLauncherItem.progressVisible
+        active: task.smartLauncherItem && task.smartLauncherItem.progressVisible
 
         source: "TaskProgressOverlay.qml"
     }
 
     Loader {
         id: iconBox
-        
-	   
-	   
-	   
+
         anchors {
             left: parent.left
             leftMargin: adjustMargin(true, parent.width, taskFrame.margins.left)
@@ -568,16 +560,15 @@ PlasmaCore.ToolTipArea {
             return margin;
         }
 
-
-
-
-
-
-
-
-
-
-Item {
+       
+       
+       
+       
+       
+       
+       
+       
+       Item {
     id: iconContainer
     anchors.centerIn: parent
     width: parent.height   // or any ratio
@@ -797,8 +788,6 @@ Rectangle {
 
 
 
-        
-        
 
         states: [
             // Using a state transition avoids a binding loop between label.visible and
@@ -852,7 +841,11 @@ Rectangle {
         verticalAlignment: Text.AlignVCenter
         maximumLineCount: Plasmoid.configuration.maxTextLines || undefined
 
-        Accessible.ignored: true
+        // The accessible item of this element is only used for debugging
+        // purposes, and it will never gain focus (thus it won't interfere
+        // with screenreaders).
+        Accessible.ignored: !visible
+        Accessible.name: parent.Accessible.name + "-labelhint"
 
         // use State to avoid unnecessary re-evaluation when the label is invisible
         states: State {

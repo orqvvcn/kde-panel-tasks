@@ -26,8 +26,11 @@ Item {
     // Header
     PlasmaExtras.PlasmoidHeading {
         id: plasmoidHeading
-        background.opacity: 0.4
-
+        
+        
+         background.opacity: 0.4
+        
+        
         anchors {
             top: parent.top
             left: parent.left
@@ -293,8 +296,9 @@ Item {
     // Footer
     PlasmaExtras.PlasmoidHeading {
         id: plasmoidFooter
+        
         background.opacity: 0.4
-
+        
         position: PlasmaComponents.ToolBar.Footer
         anchors {
             bottom: parent.bottom

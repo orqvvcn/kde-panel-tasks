@@ -20,7 +20,9 @@ KCMUtils.SimpleKCM {
 
     property alias cfg_showToolTips: showToolTips.checked
     property alias cfg_highlightWindows: highlightWindows.checked
+    property bool cfg_indicateAudioStreams
     property bool cfg_interactiveMute
+    property bool cfg_tooltipControls
     property alias cfg_fill: fill.checked
     property alias cfg_maxStripes: maxStripes.value
     property alias cfg_forceStripes: forceStripes.checked
@@ -53,10 +55,28 @@ KCMUtils.SimpleKCM {
         }
 
         QQC2.CheckBox {
+            id: indicateAudioStreams
+            text: i18nc("@option:check section General", "Show an indicator when a task is playing audio")
+            checked: cfg_indicateAudioStreams && plasmaPaAvailable
+            onToggled: cfg_indicateAudioStreams = checked
+            enabled: plasmaPaAvailable
+        }
+
+        QQC2.CheckBox {
             id: interactiveMute
-            text: i18nc("@option:check section General", "Use audio indicators to mute tasks")
+            leftPadding: mirrored ? 0 : (indicateAudioStreams.indicator.width + indicateAudioStreams.spacing)
+            rightPadding: mirrored ? (indicateAudioStreams.indicator.width + indicateAudioStreams.spacing) : 0
+            text: i18nc("@option:check section General", "Mute task when clicking indicator")
             checked: cfg_interactiveMute && plasmaPaAvailable
             onToggled: cfg_interactiveMute = checked
+            enabled: indicateAudioStreams.checked && plasmaPaAvailable
+        }
+
+        QQC2.CheckBox {
+            id: tooltipControls
+            text: i18nc("@option:check section General", "Show media and volume controls in tooltip")
+            checked: cfg_tooltipControls && plasmaPaAvailable
+            onToggled: cfg_tooltipControls = checked
             enabled: plasmaPaAvailable
         }
 

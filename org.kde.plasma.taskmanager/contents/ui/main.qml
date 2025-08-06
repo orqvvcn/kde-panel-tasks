@@ -95,13 +95,30 @@ PlasmoidItem {
     property Item dragSource
 
     signal requestLayout
-    signal windowsHovered(var winIds, bool hovered)
-    signal activateWindowView(var winIds)
 
     onDragSourceChanged: {
         if (dragSource === null) {
             tasksModel.syncLaunchers();
         }
+    }
+
+    function windowsHovered(winIds: var, hovered: bool): DBus.DBusPendingReply {
+        if (!Plasmoid.configuration.highlightWindows) {
+            return;
+        }
+        return DBus.SessionBus.asyncCall({service: "org.kde.KWin.HighlightWindow", path: "/org/kde/KWin/HighlightWindow", iface: "org.kde.KWin.HighlightWindow", member: "highlightWindows", arguments: [hovered ? winIds : []], signature: "(as)"});
+    }
+
+    function cancelHighlightWindows(): DBus.DBusPendingReply {
+        return DBus.SessionBus.asyncCall({service: "org.kde.KWin.HighlightWindow", path: "/org/kde/KWin/HighlightWindow", iface: "org.kde.KWin.HighlightWindow", member: "highlightWindows", arguments: [[]], signature: "(as)"});
+    }
+
+    function activateWindowView(winIds: var): DBus.DBusPendingReply {
+        if (!effectWatcher.registered) {
+            return;
+        }
+        cancelHighlightWindows();
+        return DBus.SessionBus.asyncCall({service: "org.kde.KWin.Effect.WindowView1", path: "/org/kde/KWin/Effect/WindowView1", iface: "org.kde.KWin.Effect.WindowView1", member: "activate", arguments: [winIds.map(s => String(s))], signature: "(as)"});
     }
 
     function publishIconGeometries(taskItems: /*list<Item>*/var): void {
@@ -191,6 +208,9 @@ PlasmoidItem {
                 return TaskManager.TasksModel.SortVirtualDesktop;
             case 4:
                 return TaskManager.TasksModel.SortActivity;
+            // 5 is SortLastActivated, skipped
+            case 6:
+                return TaskManager.TasksModel.SortWindowPositionHorizontal;
             default:
                 return TaskManager.TasksModel.SortDisabled;
             }
@@ -217,7 +237,6 @@ PlasmoidItem {
 
     readonly property TaskManagerApplet.Backend backend: TaskManagerApplet.Backend {
         id: backend
-        highlightWindows: Plasmoid.configuration.highlightWindows
 
         onAddLauncher: {
             tasks.addLauncher(url);
@@ -555,8 +574,6 @@ PlasmoidItem {
     Component.onCompleted: {
         TaskTools.taskManagerInstanceCount += 1;
         requestLayout.connect(iconGeometryTimer.restart);
-        windowsHovered.connect(backend.windowsHovered);
-        activateWindowView.connect(backend.activateWindowView);
     }
 
     Component.onDestruction: {
